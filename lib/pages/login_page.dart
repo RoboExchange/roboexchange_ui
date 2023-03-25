@@ -17,57 +17,39 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Center(
-        child: Container(
+        child: SizedBox(
           width: 400,
           height: 280,
-          color: Colors.black,
           child: Padding(
             padding: const EdgeInsets.all(38.0),
             child: Column(
               children: [
                 TextField(
-                  style: TextStyle(color: Colors.white),
                   controller: usernameController,
                   decoration: InputDecoration(
                     label: Text("Username"),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white),
-                    ),
-                    labelStyle: TextStyle(color: Colors.white54),
-                    focusColor: Colors.white,
                   ),
                 ),
                 TextField(
-                  style: TextStyle(color: Colors.white),
                   obscureText: true,
                   enableSuggestions: false,
                   autocorrect: false,
                   controller: passwordPassword,
                   decoration: InputDecoration(
                     label: Text("Password"),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white),
-                    ),
-                    labelStyle: TextStyle(color: Colors.white54),
-                    focusColor: Colors.white,
                   ),
                   textInputAction: TextInputAction.go,
                   onSubmitted: (value) {
                     login();
                   },
                 ),
-                Spacer(),
-                ElevatedButton(
-                  onPressed: login,
-                  child: Text("LOGIN"),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: ElevatedButton(
+                    onPressed: login,
+                    child: Text("LOGIN"),
+                  ),
                 )
               ],
             ),

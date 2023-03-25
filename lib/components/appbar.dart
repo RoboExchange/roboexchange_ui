@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-var appbar = AppBar(
-  actions: [
-    IconButton(onPressed: () {}, icon: Icon(Icons.logout))
-  ],
-);
+const storage = FlutterSecureStorage();
+
+class CustomAppBar {
+  static AppBar getAppBar(BuildContext context) {
+    return AppBar(
+      actions: [
+        IconButton(
+          onPressed: () {
+            storage.delete(key: 'token');
+            Navigator.of(context).pushNamed("/login");
+          },
+          icon: Icon(Icons.logout),
+        )
+      ],
+    );
+  }
+}
