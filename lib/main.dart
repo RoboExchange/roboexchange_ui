@@ -14,7 +14,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'RoboExchange',
-      theme: ThemeData.dark(),
       initialRoute: '/',
       onGenerateRoute: RouteHandler.handle,
     );

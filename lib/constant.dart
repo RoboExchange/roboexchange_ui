@@ -1,3 +1,1 @@
-class Constant {
-  static const String serverBaseUrl = "https://roboexchange.ir";
-}
+var serverBaseUrl = "https://roboexchange.ir";

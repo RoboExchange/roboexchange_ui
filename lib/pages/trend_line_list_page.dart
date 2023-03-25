@@ -5,6 +5,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:roboexchange_ui/constant.dart';
 import 'package:roboexchange_ui/model/add_trend_line_modal.dart';
+import 'package:roboexchange_ui/responsive/desktop_scaffold.dart';
+import 'package:roboexchange_ui/responsive/mobile_scaffold.dart';
+import 'package:roboexchange_ui/responsive/responsive_layout.dart';
+import 'package:roboexchange_ui/responsive/tablet_scaffold.dart';
 
 class TrendLineListPage extends StatefulWidget {
   const TrendLineListPage({Key? key}) : super(key: key);
@@ -14,6 +18,26 @@ class TrendLineListPage extends StatefulWidget {
 }
 
 class _TrendLineListPageState extends State<TrendLineListPage> {
+  @override
+  Widget build(BuildContext context) {
+    return ResponsiveLayout(
+      mobileScaffold: MobileScaffold(body: PageContent(showAppBar: false,)),
+      tabletScaffold: TabletScaffold(body: PageContent(showAppBar: false,),),
+      desktopScaffold: DesktopScaffold(body: PageContent(showAppBar: true,)),
+    );
+  }
+}
+
+class PageContent extends StatefulWidget {
+  final bool showAppBar;
+
+  const PageContent({Key? key, required this.showAppBar}) : super(key: key);
+
+  @override
+  State<PageContent> createState() => _PageContentState();
+}
+
+class _PageContentState extends State<PageContent> {
   var storage = const FlutterSecureStorage();
   List trendLines = [];
   bool isLoading = true;
@@ -34,39 +58,62 @@ class _TrendLineListPageState extends State<TrendLineListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("List trend lines"),
-      ),
-      body: Visibility(
-        visible: isLoading,
-        replacement: RefreshIndicator(
-          onRefresh: fetchAllTrendLines,
-          child: LayoutBuilder(
-            builder: (context, constraint) {
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraint.maxWidth),
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text("id")),
-                      DataColumn(label: Text("symbol")),
-                      DataColumn(label: Text("timeframe")),
-                      DataColumn(label: Text("type")),
-                      DataColumn(label: Text("x1")),
-                      DataColumn(label: Text("y1")),
-                      DataColumn(label: Text("x2")),
-                      DataColumn(label: Text("y2")),
-                      DataColumn(label: Text("actions")),
-                    ],
-                    rows: fillTableRows(),
-                  ),
-                ),
-              );
-            },
+      backgroundColor: Colors.white10,
+      body: Column(
+        children: [
+          Visibility(
+            visible: widget.showAppBar,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: AppBar(
+                actions: [
+                  IconButton(onPressed: () {}, icon: Icon(Icons.logout))
+                ],
+              ),
+            ),
           ),
-        ),
-        child: Center(child: CircularProgressIndicator()),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                width: double.infinity,
+                color: Colors.white,
+                child: Visibility(
+                  visible: isLoading,
+                  replacement: RefreshIndicator(
+                    onRefresh: fetchAllTrendLines,
+                    child: LayoutBuilder(
+                      builder: (context, constraint) {
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            constraints:
+                                BoxConstraints(minWidth: constraint.maxWidth),
+                            child: DataTable(
+                              columns: const [
+                                DataColumn(label: Text("id")),
+                                DataColumn(label: Text("symbol")),
+                                DataColumn(label: Text("timeframe")),
+                                DataColumn(label: Text("type")),
+                                DataColumn(label: Text("x1")),
+                                DataColumn(label: Text("y1")),
+                                DataColumn(label: Text("x2")),
+                                DataColumn(label: Text("y2")),
+                                DataColumn(label: Text("actions")),
+                              ],
+                              rows: fillTableRows(),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+            ),
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showDialog(
@@ -84,14 +131,12 @@ class _TrendLineListPageState extends State<TrendLineListPage> {
   }
 
   Future<void> fetchAllTrendLines() async {
-    var url = '${Constant.serverBaseUrl}/api/v1/trend-line/list';
+    var url = '$serverBaseUrl/api/v1/trend-line/list';
     var uri = Uri.parse(url);
 
     final token = await storage.read(key: 'token');
-    final headers = {
-      'Authorization':'$token'
-    };
-    var response = await http.get(uri,headers: headers);
+    final headers = {'Authorization': '$token'};
+    var response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map;
       setState(() {
@@ -149,7 +194,7 @@ class _TrendLineListPageState extends State<TrendLineListPage> {
   }
 
   Future<void> deleteTrendLine(id) async {
-    var url = 'http://${Constant.serverBaseUrl}/api/v1/trend-line/$id';
+    var url = '$serverBaseUrl/api/v1/trend-line/$id';
     var uri = Uri.parse(url);
     var response = await http.delete(uri);
     if (response.statusCode == 200) {

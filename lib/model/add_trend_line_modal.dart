@@ -163,7 +163,7 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       showTimePicker(context: context, initialTime: currentTime);
 
   Future<void> addItem() async {
-    var url = "http://${Constant.serverBaseUrl}/api/v1/trend-line/add";
+    var url = "http://$serverBaseUrl/api/v1/trend-line/add";
 
     var data = {
       "symbol": symbolController.text,
@@ -182,7 +182,7 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
   }
 
   Future<void> updateItem() async {
-    var url = "http://${Constant.serverBaseUrl}/api/v1/trend-line/$id";
+    var url = "$serverBaseUrl/api/v1/trend-line/$id";
     var data = {
       "symbol": symbolController.text,
       "x1": x1DateTime.toIso8601String(),

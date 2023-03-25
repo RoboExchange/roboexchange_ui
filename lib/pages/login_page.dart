@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
-import 'package:roboexchange_ui/constant.dart';
+import 'package:roboexchange_ui/service/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -31,17 +28,41 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               children: [
                 TextField(
+                  style: TextStyle(color: Colors.white),
                   controller: usernameController,
-                  decoration: InputDecoration(label: Text("Username")),
-                  onEditingComplete: login,
+                  decoration: InputDecoration(
+                    label: Text("Username"),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white54),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    labelStyle: TextStyle(color: Colors.white54),
+                    focusColor: Colors.white,
+                  ),
                 ),
                 TextField(
+                  style: TextStyle(color: Colors.white),
                   obscureText: true,
                   enableSuggestions: false,
                   autocorrect: false,
                   controller: passwordPassword,
-                  decoration: InputDecoration(label: Text("Password")),
-                  onEditingComplete: login,
+                  decoration: InputDecoration(
+                    label: Text("Password"),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white54),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    labelStyle: TextStyle(color: Colors.white54),
+                    focusColor: Colors.white,
+                  ),
+                  textInputAction: TextInputAction.go,
+                  onSubmitted: (value) {
+                    login();
+                  },
                 ),
                 Spacer(),
                 ElevatedButton(
@@ -64,26 +85,15 @@ class _LoginPageState extends State<LoginPage> {
             child: CircularProgressIndicator(),
           );
         });
-    const url = "${Constant.serverBaseUrl}/api/v1/auth/login";
-    final uri = Uri.parse(url);
+
     final username = usernameController.text;
     final password = passwordPassword.text;
-    final credentials = '$username:$password';
+    var success = await AuthService.login(username, password);
 
-    var encoded = base64.encode(utf8.encode(credentials));
-
-    var headers = {'Authorization': 'Basic $encoded'};
-
-    var response = await http.get(uri, headers: headers);
-
-    if (response.statusCode == 200) {
-      var responseHeaders = response.headers;
-      var token = responseHeaders['authorization'];
-      print('Login success');
-      storage.write(key: 'token', value: token)
-          .then((value) => Navigator.of(context).pushNamed("/"));
+    if (success && context.mounted) {
+      Navigator.of(context).pushNamed("/");
+    } else if (context.mounted) {
+      Navigator.of(context).pop();
     }
-
-    if (context.mounted) Navigator.of(context).pop();
   }
 }
