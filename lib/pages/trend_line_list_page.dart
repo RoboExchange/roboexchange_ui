@@ -23,9 +23,19 @@ class _TrendLineListPageState extends State<TrendLineListPage> {
   @override
   Widget build(BuildContext context) {
     return ResponsiveLayout(
-      mobileScaffold: MobileScaffold(body: PageContent(showAppBar: false,)),
-      tabletScaffold: TabletScaffold(body: PageContent(showAppBar: false,),),
-      desktopScaffold: DesktopScaffold(body: PageContent(showAppBar: true,)),
+      mobileScaffold: MobileScaffold(
+          body: PageContent(
+        showAppBar: false,
+      )),
+      tabletScaffold: TabletScaffold(
+        body: PageContent(
+          showAppBar: false,
+        ),
+      ),
+      desktopScaffold: DesktopScaffold(
+          body: PageContent(
+        showAppBar: true,
+      )),
     );
   }
 }
@@ -91,6 +101,7 @@ class _PageContentState extends State<PageContent> {
                               columns: const [
                                 DataColumn(label: Text("id")),
                                 DataColumn(label: Text("symbol")),
+                                DataColumn(label: Text("last update")),
                                 DataColumn(label: Text("timeframe")),
                                 DataColumn(label: Text("type")),
                                 DataColumn(label: Text("x1")),
@@ -152,14 +163,16 @@ class _PageContentState extends State<PageContent> {
       var id = tl['id'].toString();
       var symbol = tl['symbol'] ?? " ";
       var timeframe = tl['timeframe'] ?? " ";
+      var lastUpdateTime = tl['lastUpdateTime'].toString();
       var type = tl['type'] ?? " ";
-      var x1 = tl['x1'] != null ? tl['x1'].toString() : " ";
-      var x2 = tl['x2'] != null ? tl['x2'].toString() : " ";
-      var y1 = tl['y1'] != null ? tl['y1'].toString() : " ";
-      var y2 = tl['y2'] != null ? tl['y2'].toString() : " ";
+      var x1 = tl['x1'].toString();
+      var x2 = tl['x2'].toString();
+      var y1 = tl['y1'].toString();
+      var y2 = tl['y2'].toString();
       var dataRow = DataRow(cells: [
         DataCell(Text(id)),
         DataCell(Text(symbol)),
+        DataCell(Text(formatDateTime(DateTime.parse(lastUpdateTime)))),
         DataCell(Text(timeframe)),
         DataCell(Text(type)),
         DataCell(Text(formatDateTime(DateTime.parse(x1)))),
@@ -203,7 +216,7 @@ class _PageContentState extends State<PageContent> {
       'Authorization': '$token'
     };
 
-    var response = await http.delete(uri,headers: headers);
+    var response = await http.delete(uri, headers: headers);
     if (response.statusCode == 200) {
       var filtered = trendLines
           .where((element) => element['id'].toString() != id)
@@ -214,7 +227,7 @@ class _PageContentState extends State<PageContent> {
     }
 
     setState(() {
-      isLoading= false;
+      isLoading = false;
     });
   }
 
