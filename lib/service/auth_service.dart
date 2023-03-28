@@ -24,4 +24,9 @@ class AuthService {
 
     return false;
   }
+
+  static Future<String?> getToken() async {
+    var token = await storage.read(key: 'token');
+    return token;
+  }
 }

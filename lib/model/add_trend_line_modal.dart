@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:roboexchange_ui/constant.dart';
+import 'package:roboexchange_ui/service/auth_service.dart';
 
 class AddTrendLineModal extends StatefulWidget {
   final Function updateTableFunction;
@@ -163,8 +164,8 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       showTimePicker(context: context, initialTime: currentTime);
 
   Future<void> addItem() async {
-    var url = "http://$serverBaseUrl/api/v1/trend-line/add";
-
+    var url = "$serverBaseUrl/api/v1/trend-line/add";
+    var token = await AuthService.getToken();
     var data = {
       "symbol": symbolController.text,
       "x1": x1DateTime.toIso8601String(),
@@ -174,15 +175,21 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       "type": "MACD",
       "timeframe": selectedTimeframe,
       "enable": true
+    };
+
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': '$token'
     };
 
     var uri = Uri.parse(url);
     await http.post(uri,
-        body: jsonEncode(data), headers: {'Content-Type': 'application/json'});
+        body: jsonEncode(data), headers: headers);
   }
 
   Future<void> updateItem() async {
     var url = "$serverBaseUrl/api/v1/trend-line/$id";
+    var token = await AuthService.getToken();
     var data = {
       "symbol": symbolController.text,
       "x1": x1DateTime.toIso8601String(),
@@ -194,9 +201,14 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       "enable": true
     };
 
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': '$token'
+    };
+
     var uri = Uri.parse(url);
-    var response = await http.put(uri,
-        body: jsonEncode(data), headers: {'Content-Type': 'application/json'});
+    var response =
+        await http.put(uri, body: jsonEncode(data), headers: headers);
     print(response.body);
   }
 }

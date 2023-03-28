@@ -10,6 +10,7 @@ import 'package:roboexchange_ui/responsive/desktop_scaffold.dart';
 import 'package:roboexchange_ui/responsive/mobile_scaffold.dart';
 import 'package:roboexchange_ui/responsive/responsive_layout.dart';
 import 'package:roboexchange_ui/responsive/tablet_scaffold.dart';
+import 'package:roboexchange_ui/service/auth_service.dart';
 
 class TrendLineListPage extends StatefulWidget {
   const TrendLineListPage({Key? key}) : super(key: key);
@@ -191,9 +192,18 @@ class _PageContentState extends State<PageContent> {
   }
 
   Future<void> deleteTrendLine(id) async {
+    setState(() {
+      isLoading = true;
+    });
     var url = '$serverBaseUrl/api/v1/trend-line/$id';
     var uri = Uri.parse(url);
-    var response = await http.delete(uri);
+    var token = await AuthService.getToken();
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': '$token'
+    };
+
+    var response = await http.delete(uri,headers: headers);
     if (response.statusCode == 200) {
       var filtered = trendLines
           .where((element) => element['id'].toString() != id)
@@ -202,6 +212,10 @@ class _PageContentState extends State<PageContent> {
         trendLines = filtered;
       });
     }
+
+    setState(() {
+      isLoading= false;
+    });
   }
 
   String formatDateTime(DateTime dateTime) {

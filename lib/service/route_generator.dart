@@ -4,7 +4,6 @@ import 'package:roboexchange_ui/pages/trend_line_list_page.dart';
 
 class RouteHandler {
   static Route<dynamic> handle(RouteSettings settings) {
-    print(settings.name);
     switch (settings.name) {
       case "/":
         return MaterialPageRoute(builder: (_) => TrendLineListPage());

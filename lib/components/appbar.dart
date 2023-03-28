@@ -10,7 +10,6 @@ class CustomAppBar {
       actions: [
         IconButton(
           onPressed: () {
-            print('"Clicked');
             storage.delete(key: 'token');
             Navigator.of(context).pushNamed("/login");
           },
