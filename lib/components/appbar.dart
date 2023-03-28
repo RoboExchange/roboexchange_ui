@@ -6,9 +6,11 @@ const storage = FlutterSecureStorage();
 class CustomAppBar {
   static AppBar getAppBar(BuildContext context) {
     return AppBar(
+      automaticallyImplyLeading: false,
       actions: [
         IconButton(
           onPressed: () {
+            print('"Clicked');
             storage.delete(key: 'token');
             Navigator.of(context).pushNamed("/login");
           },

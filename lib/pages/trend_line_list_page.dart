@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:roboexchange_ui/components/appbar.dart';
 import 'package:roboexchange_ui/constant.dart';
 import 'package:roboexchange_ui/model/add_trend_line_modal.dart';
 import 'package:roboexchange_ui/responsive/desktop_scaffold.dart';
@@ -65,11 +66,7 @@ class _PageContentState extends State<PageContent> {
             visible: widget.showAppBar,
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: AppBar(
-                actions: [
-                  IconButton(onPressed: () {}, icon: Icon(Icons.logout))
-                ],
-              ),
+              child: CustomAppBar.getAppBar(context),
             ),
           ),
           Expanded(
