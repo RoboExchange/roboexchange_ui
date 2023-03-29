@@ -40,6 +40,7 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       isUpdate = true;
       id = item["id"];
       symbolController.text = item["symbol"];
+      selectedTimeframe = item['timeframe'].toString();
       y1Controller.text = item['y1'].toString();
       y2Controller.text = item['y2'].toString();
       x1DateTime = DateTime.parse(item['x1']);
