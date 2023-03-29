@@ -20,7 +20,7 @@ class AddTrendLineModal extends StatefulWidget {
 class _AddTrendLineModalState extends State<AddTrendLineModal> {
   String selectedTimeframe = "FOUR_HOUR";
   var timeframes = [
-    'ONE_MINUTE',
+    // 'ONE_MINUTE',
     'FIVE_MINUTE',
     'FIFTEEN_MINUTE',
     'ONE_HOUR',
