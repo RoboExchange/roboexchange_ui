@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:roboexchange_ui/components/appbar.dart';
+import 'package:roboexchange_ui/components/dropdown_timeframe.dart';
 import 'package:roboexchange_ui/constant.dart';
 import 'package:roboexchange_ui/model/add_trend_line_modal.dart';
 import 'package:roboexchange_ui/model/confirmation_dialog.dart';
@@ -26,8 +27,8 @@ class _TrendLineListPageState extends State<TrendLineListPage> {
     return ResponsiveLayout(
       mobileScaffold: MobileScaffold(
           body: PageContent(
-            showAppBar: false,
-          )),
+        showAppBar: false,
+      )),
       tabletScaffold: TabletScaffold(
         body: PageContent(
           showAppBar: false,
@@ -35,8 +36,8 @@ class _TrendLineListPageState extends State<TrendLineListPage> {
       ),
       desktopScaffold: DesktopScaffold(
           body: PageContent(
-            showAppBar: true,
-          )),
+        showAppBar: true,
+      )),
     );
   }
 }
@@ -54,36 +55,83 @@ class _PageContentState extends State<PageContent> {
   var storage = const FlutterSecureStorage();
   List trendLines = [];
   bool isLoading = true;
+  int selectedTabIndex = 0;
+
+  String? filterSymbol;
+  String? filterTimeframe;
+  bool filterIsValid = true;
 
   @override
   void initState() {
     super.initState();
-    fetchTrendLines(true);
+    fetchTrendLines();
   }
 
   Future<void> _updateTable() async {
     setState(() {
       isLoading = true;
+      filterIsValid = true;
     });
-    fetchTrendLines(true);
+    fetchTrendLines();
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: Colors.white10,
-        body: Column(
-          children: [
-            Visibility(
-              visible: widget.showAppBar,
+    return Scaffold(
+      backgroundColor: Colors.black12,
+      body: Column(
+        children: [
+          Visibility(
+            visible: widget.showAppBar,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CustomAppBar.getAppBar(context),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+            child: Container(
+              width: double.infinity,
+              color: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: CustomAppBar.getAppBar(context),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Spacer(),
+                    SizedBox(
+                      width: 300,
+                      child: TextField(
+                          decoration: InputDecoration(label: Text("Search")),
+                          onChanged: (symbol) {
+                            setState(() {
+                              filterSymbol = symbol;
+                            });
+                            fetchTrendLines();
+                          }),
+                    ),
+                    SizedBox(
+                      width: 18,
+                    ),
+                    SizedBox(
+                      width: 180,
+                      child: DropDownTimeframes(
+                        onChange: (String? selectedTimeframe) {
+                          setState(() {
+                            filterTimeframe = selectedTimeframe;
+                          });
+                          fetchTrendLines();
+                        },
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
-            Expanded(
+          ),
+          DefaultTabController(
+            length: 2,
+            child: Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Container(
@@ -101,13 +149,15 @@ class _PageContentState extends State<PageContent> {
                         onTap: (selectedIndex) {
                           setState(() {
                             isLoading = true;
+                            selectedTabIndex = selectedIndex;
+                            filterIsValid = selectedIndex == 0 ? true : false;
                           });
                           switch (selectedIndex) {
                             case 0:
-                              fetchTrendLines(true);
+                              fetchTrendLines();
                               break;
                             case 1:
-                              fetchTrendLines(false);
+                              fetchTrendLines();
                           }
                         },
                         tabs: const [
@@ -125,7 +175,12 @@ class _PageContentState extends State<PageContent> {
                         child: Visibility(
                           visible: isLoading,
                           replacement: RefreshIndicator(
-                            onRefresh: () => fetchTrendLines(true),
+                            onRefresh: () {
+                              setState(() {
+                                filterIsValid = true;
+                              });
+                              return fetchTrendLines();
+                            },
                             child: TabBarView(
                               children: [
                                 trendLineTable(true),
@@ -140,22 +195,21 @@ class _PageContentState extends State<PageContent> {
                   ),
                 ),
               ),
-            )
-          ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showDialog(
+          context: context,
+          builder: (_) {
+            return AddTrendLineModal(
+              item: null,
+              updateTableFunction: _updateTable,
+            );
+          },
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () =>
-              showDialog(
-                context: context,
-                builder: (_) {
-                  return AddTrendLineModal(
-                    item: null,
-                    updateTableFunction: _updateTable,
-                  );
-                },
-              ),
-          child: Icon(Icons.add),
-        ),
+        child: Icon(Icons.add),
       ),
     );
   }
@@ -172,14 +226,19 @@ class _PageContentState extends State<PageContent> {
               child: Visibility(
                 visible: isLoading,
                 replacement: RefreshIndicator(
-                  onRefresh: () => fetchTrendLines(isValid),
+                  onRefresh: () {
+                    setState(() {
+                      isValid = true;
+                    });
+                    return fetchTrendLines();
+                  },
                   child: LayoutBuilder(
                     builder: (context, constraint) {
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: ConstrainedBox(
                           constraints:
-                          BoxConstraints(minWidth: constraint.maxWidth),
+                              BoxConstraints(minWidth: constraint.maxWidth),
                           child: DataTable(
                             columns: const [
                               DataColumn(label: Text("id")),
@@ -209,13 +268,19 @@ class _PageContentState extends State<PageContent> {
     );
   }
 
-  Future<void> fetchTrendLines(bool isValid) async {
+  Future<void> fetchTrendLines() async {
     var url = '/api/v1/trend-line/list';
-    var queryParameters = {"isValid": isValid.toString()};
+    var queryParameters = {
+      "isValid": filterIsValid.toString(),
+      "symbol" : filterSymbol?.toString().trim(),
+      "timeframe" : filterTimeframe?.toString().trim()
+    };
+
     var uri = Uri.https(serverBaseUrl, url, queryParameters);
     var token = await AuthService.getToken();
     var headers = {'Authorization': '$token'};
     var response = await http.get(uri, headers: headers);
+
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map;
       setState(() {
@@ -258,8 +323,7 @@ class _PageContentState extends State<PageContent> {
             ),
             IconButton(
               icon: Icon(Icons.edit),
-              onPressed: () =>
-              {
+              onPressed: () => {
                 showDialog(
                     context: context,
                     builder: (_) {
@@ -277,12 +341,12 @@ class _PageContentState extends State<PageContent> {
                       return ConfirmationDialog(
                         confirm: value,
                         title: Text('Confirmation'),
-                        description:
-                        Text(
+                        description: Text(
                             "Change trendline status of symbol $symbol.\nAre you sure?"),
                         onSubmit: () {
                           changeStatus(id, value);
-                          Navigator.of(context, rootNavigator: true).pop('dialog');
+                          Navigator.of(context, rootNavigator: true)
+                              .pop('dialog');
                         },
                       );
                     });
@@ -322,7 +386,7 @@ class _PageContentState extends State<PageContent> {
     });
   }
 
-  Future<void> changeStatus(id,isEnable) async {
+  Future<void> changeStatus(id, isEnable) async {
     setState(() {
       isLoading = true;
     });
@@ -331,7 +395,8 @@ class _PageContentState extends State<PageContent> {
       'id': id.toString(),
       'enable': isEnable.toString(),
     };
-    var uri = Uri.https(serverBaseUrl, '/api/v1/trend-line/status', reqParameters);
+    var uri =
+        Uri.https(serverBaseUrl, '/api/v1/trend-line/status', reqParameters);
     var token = await AuthService.getToken();
     var headers = {
       'Content-Type': 'application/json',
@@ -354,7 +419,6 @@ class _PageContentState extends State<PageContent> {
   }
 
   String formatDateTime(DateTime dateTime) {
-    return "${dateTime.year}/${dateTime.month}/${dateTime.day} ${dateTime
-        .hour}:${dateTime.minute}";
+    return "${dateTime.year}/${dateTime.month}/${dateTime.day} ${dateTime.hour}:${dateTime.minute}";
   }
 }

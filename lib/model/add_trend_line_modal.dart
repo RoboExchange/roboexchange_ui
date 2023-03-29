@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:roboexchange_ui/components/dropdown_timeframe.dart';
 import 'package:roboexchange_ui/constant.dart';
 import 'package:roboexchange_ui/service/auth_service.dart';
 
@@ -19,15 +20,6 @@ class AddTrendLineModal extends StatefulWidget {
 
 class _AddTrendLineModalState extends State<AddTrendLineModal> {
   String selectedTimeframe = "FOUR_HOUR";
-  var timeframes = [
-    // 'ONE_MINUTE',
-    'FIVE_MINUTE',
-    'FIFTEEN_MINUTE',
-    'ONE_HOUR',
-    'FOUR_HOUR',
-    'ONE_DAY',
-    'ONE_WEEK'
-  ];
 
   bool isUpdate = false;
   var currentDate = DateTime.now();
@@ -88,19 +80,14 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
               controller: symbolController,
               decoration: InputDecoration(labelText: "Symbol"),
             ),
-            DropdownButtonFormField(
-                value: selectedTimeframe,
-                items: timeframes.map((String tf) {
-                  return DropdownMenuItem(
-                    value: tf,
-                    child: Text(tf),
-                  );
-                }).toList(),
-                onChanged: (String? value) {
+            DropDownTimeframes(
+                selectedTimeframe: selectedTimeframe,
+                onChange:(String? value) {
                   setState(() {
                     selectedTimeframe = value!;
                   });
-                }),
+                },
+            ),
             Padding(
               padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
               child: SizedBox(
