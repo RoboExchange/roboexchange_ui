@@ -8,8 +8,7 @@ class AuthService {
   static const storage = FlutterSecureStorage();
 
   static Future<bool> login(String username,String password) async {
-    var url = "$serverBaseUrl/api/v1/auth/login";
-    final uri = Uri.parse(url);
+    final uri = Uri.https(serverBaseUrl,'/api/v1/auth/login');
 
     final credentials = '$username:$password';
     var encoded = base64.encode(utf8.encode(credentials));

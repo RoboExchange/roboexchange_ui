@@ -164,7 +164,6 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       showTimePicker(context: context, initialTime: currentTime);
 
   Future<void> addItem() async {
-    var url = "$serverBaseUrl/api/v1/trend-line/add";
     var token = await AuthService.getToken();
     var data = {
       "symbol": symbolController.text,
@@ -182,13 +181,12 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       'Authorization': '$token'
     };
 
-    var uri = Uri.parse(url);
+    var uri = Uri.https(serverBaseUrl,'/api/v1/trend-line/add');
     await http.post(uri,
         body: jsonEncode(data), headers: headers);
   }
 
   Future<void> updateItem() async {
-    var url = "$serverBaseUrl/api/v1/trend-line/$id";
     var token = await AuthService.getToken();
     var data = {
       "symbol": symbolController.text,
@@ -206,7 +204,7 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       'Authorization': '$token'
     };
 
-    var uri = Uri.parse(url);
+    var uri = Uri.https(serverBaseUrl,'/api/v1/trend-line/$id');
     var response =
         await http.put(uri, body: jsonEncode(data), headers: headers);
     print(response.body);

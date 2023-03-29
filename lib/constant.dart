@@ -1,1 +1,1 @@
-var serverBaseUrl = "https://roboexchange.ir";
+var serverBaseUrl = "roboexchange.ir";

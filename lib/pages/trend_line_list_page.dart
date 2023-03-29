@@ -57,94 +57,162 @@ class _PageContentState extends State<PageContent> {
   @override
   void initState() {
     super.initState();
-    fetchAllTrendLines();
+    fetchTrendLines(true);
   }
 
   Future<void> _updateTable() async {
     setState(() {
       isLoading = true;
     });
-    fetchAllTrendLines();
+    fetchTrendLines(true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white10,
-      body: Column(
-        children: [
-          Visibility(
-            visible: widget.showAppBar,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CustomAppBar.getAppBar(context),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                width: double.infinity,
-                color: Colors.white,
-                child: Visibility(
-                  visible: isLoading,
-                  replacement: RefreshIndicator(
-                    onRefresh: fetchAllTrendLines,
-                    child: LayoutBuilder(
-                      builder: (context, constraint) {
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: ConstrainedBox(
-                            constraints:
-                                BoxConstraints(minWidth: constraint.maxWidth),
-                            child: DataTable(
-                              columns: const [
-                                DataColumn(label: Text("id")),
-                                DataColumn(label: Text("symbol")),
-                                DataColumn(label: Text("last update")),
-                                DataColumn(label: Text("timeframe")),
-                                DataColumn(label: Text("type")),
-                                DataColumn(label: Text("x1")),
-                                DataColumn(label: Text("y1")),
-                                DataColumn(label: Text("x2")),
-                                DataColumn(label: Text("y2")),
-                                DataColumn(label: Text("actions")),
-                              ],
-                              rows: fillTableRows(),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.white10,
+        body: Column(
+          children: [
+            Visibility(
+              visible: widget.showAppBar,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CustomAppBar.getAppBar(context),
               ),
             ),
-          )
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showDialog(
-          context: context,
-          builder: (_) {
-            return AddTrendLineModal(
-              item: null,
-              updateTableFunction: _updateTable,
-            );
-          },
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  child: Column(
+                    children: [
+                      TabBar(
+                        unselectedLabelColor: Colors.black38,
+                        padding: EdgeInsets.all(5),
+                        indicator: BoxDecoration(
+                          color: Colors.lightBlueAccent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        onTap: (selectedIndex) {
+                          setState(() {
+                            isLoading = true;
+                          });
+                          switch (selectedIndex) {
+                            case 0:
+                              fetchTrendLines(true);
+                              break;
+                            case 1:
+                              fetchTrendLines(false);
+                          }
+                        },
+                        tabs: const [
+                          Tab(
+                            text: "Active",
+                            icon: Icon(Icons.check),
+                          ),
+                          Tab(
+                            text: "Need Update",
+                            icon: Icon(Icons.update),
+                          ),
+                        ],
+                      ),
+                      Expanded(
+                        child: Visibility(
+                          visible: isLoading,
+                          replacement: RefreshIndicator(
+                            onRefresh: () => fetchTrendLines(true),
+                            child: TabBarView(
+                              children: [
+                                trendLineTable(true),
+                                trendLineTable(false),
+                              ],
+                            ),
+                          ),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          ],
         ),
-        child: Icon(Icons.add),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => showDialog(
+            context: context,
+            builder: (_) {
+              return AddTrendLineModal(
+                item: null,
+                updateTableFunction: _updateTable,
+              );
+            },
+          ),
+          child: Icon(Icons.add),
+        ),
       ),
     );
   }
 
-  Future<void> fetchAllTrendLines() async {
-    var url = '$serverBaseUrl/api/v1/trend-line/list';
-    var uri = Uri.parse(url);
+  Column trendLineTable(bool isValid) {
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              width: double.infinity,
+              color: Colors.white,
+              child: Visibility(
+                visible: isLoading,
+                replacement: RefreshIndicator(
+                  onRefresh: () => fetchTrendLines(isValid),
+                  child: LayoutBuilder(
+                    builder: (context, constraint) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints:
+                              BoxConstraints(minWidth: constraint.maxWidth),
+                          child: DataTable(
+                            columns: const [
+                              DataColumn(label: Text("id")),
+                              DataColumn(label: Text("symbol")),
+                              DataColumn(label: Text("last update")),
+                              DataColumn(label: Text("timeframe")),
+                              DataColumn(label: Text("type")),
+                              DataColumn(label: Text("x1")),
+                              DataColumn(label: Text("y1")),
+                              DataColumn(label: Text("x2")),
+                              DataColumn(label: Text("y2")),
+                              DataColumn(label: Text("actions")),
+                            ],
+                            rows: fillTableRows(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+  }
 
-    final token = await storage.read(key: 'token');
-    final headers = {'Authorization': '$token'};
+  Future<void> fetchTrendLines(bool isValid) async {
+    var url = '/api/v1/trend-line/list';
+    var queryParameters = {"isValid": isValid.toString()};
+    var uri = Uri.https(serverBaseUrl, url, queryParameters);
+    var token = await AuthService.getToken();
+    var headers = {'Authorization': '$token'};
     var response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map;
@@ -208,8 +276,7 @@ class _PageContentState extends State<PageContent> {
     setState(() {
       isLoading = true;
     });
-    var url = '$serverBaseUrl/api/v1/trend-line/$id';
-    var uri = Uri.parse(url);
+    var uri = Uri.https(serverBaseUrl,'/api/v1/trend-line/$id');
     var token = await AuthService.getToken();
     var headers = {
       'Content-Type': 'application/json',
