@@ -179,9 +179,9 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
     var data = {
       "symbol": symbolController.text,
       "x1": x1DateTime.toIso8601String(),
-      "y1": double.parse(y1Controller.text),
+      "y1": y1Controller.text.isNotEmpty ? double.parse(y1Controller.text) : null,
       "x2": x2DateTime.toIso8601String(),
-      "y2": double.parse(y2Controller.text),
+      "y2": y2Controller.text.isNotEmpty ? double.parse(y2Controller.text) : null,
       "type": "MACD",
       "timeframe": selectedTimeframe,
       "enable": true
