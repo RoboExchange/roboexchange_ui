@@ -55,7 +55,11 @@ class _PageContentState extends State<PageContent> {
   var storage = const FlutterSecureStorage();
   List trendLines = [];
   bool isLoading = true;
+
   int selectedTabIndex = 0;
+  bool isAscend = true;
+  String sortColumnName = "id";
+  int? sortColumnIndex;
 
   String? filterSymbol;
   String? filterTimeframe;
@@ -182,6 +186,7 @@ class _PageContentState extends State<PageContent> {
                               return fetchTrendLines();
                             },
                             child: TabBarView(
+                              physics: NeverScrollableScrollPhysics(),
                               children: [
                                 trendLineTable(true),
                                 trendLineTable(false),
@@ -214,7 +219,7 @@ class _PageContentState extends State<PageContent> {
     );
   }
 
-  Column trendLineTable(bool isValid) {
+  Widget trendLineTable(bool isValid) {
     return Column(
       children: [
         Expanded(
@@ -233,26 +238,32 @@ class _PageContentState extends State<PageContent> {
                     return fetchTrendLines();
                   },
                   child: LayoutBuilder(
-                    builder: (context, constraint) {
+                    builder: (BuildContext context, BoxConstraints constraint) {
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
-                        child: ConstrainedBox(
-                          constraints:
-                              BoxConstraints(minWidth: constraint.maxWidth),
-                          child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text("id")),
-                              DataColumn(label: Text("symbol")),
-                              DataColumn(label: Text("last update")),
-                              DataColumn(label: Text("timeframe")),
-                              DataColumn(label: Text("type")),
-                              DataColumn(label: Text("x1")),
-                              DataColumn(label: Text("y1")),
-                              DataColumn(label: Text("x2")),
-                              DataColumn(label: Text("y2")),
-                              DataColumn(label: Text("actions")),
-                            ],
-                            rows: fillTableRows(),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                                minHeight: constraint.maxHeight,
+                                minWidth: constraint.maxWidth),
+                            child: DataTable(
+                              sortAscending: isAscend,
+                              sortColumnIndex: sortColumnIndex,
+                              columns: [
+                                DataColumn(label: Text("id"),onSort: (index, ascend) => sortColumn(index, ascend)),
+                                DataColumn(label: Text("symbol"),onSort: (index, ascend) => sortColumn(index, ascend)),
+                                DataColumn(label: Text("last update"),onSort: (index, ascend) => sortColumn(index, ascend)),
+                                DataColumn(label: Text("timeframe"),onSort: (index, ascend) => sortColumn(index, ascend)),
+                                DataColumn(label: Text("type")),
+                                DataColumn(label: Text("x1")),
+                                DataColumn(label: Text("y1")),
+                                DataColumn(label: Text("x2")),
+                                DataColumn(label: Text("y2")),
+                                DataColumn(label: Text("actions")),
+                              ],
+                              rows: fillTableRows(),
+                            ),
                           ),
                         ),
                       );
@@ -268,12 +279,28 @@ class _PageContentState extends State<PageContent> {
     );
   }
 
+  void sortColumn(int index, bool ascend) {
+    setState(() {
+      sortColumnIndex = index;
+      isAscend = ascend;
+      switch (index) {
+        case 0 : sortColumnName = "id" ; break;
+        case 1 : sortColumnName = "symbol" ; break;
+        case 2 : sortColumnName = "lastUpdateTime" ; break;
+        case 3 : sortColumnName = "timeframe" ; break;
+      }
+    });
+    fetchTrendLines();
+  }
+
   Future<void> fetchTrendLines() async {
     var url = '/api/v1/trend-line/list';
     var queryParameters = {
       "isValid": filterIsValid.toString(),
-      "symbol" : filterSymbol?.toString().trim(),
-      "timeframe" : filterTimeframe?.toString().trim()
+      "symbol": filterSymbol?.toString().trim(),
+      "timeframe": filterTimeframe?.toString().trim(),
+      "ascend" : isAscend.toString(),
+      "orderBy" : sortColumnName
     };
 
     var uri = Uri.https(serverBaseUrl, url, queryParameters);
