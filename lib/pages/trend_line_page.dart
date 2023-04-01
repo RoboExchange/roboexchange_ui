@@ -63,7 +63,7 @@ class _PageContentState extends State<PageContent> {
 
   String? filterSymbol;
   String? filterTimeframe;
-  bool filterIsValid = true;
+  bool filterValidItems = true;
 
   @override
   void initState() {
@@ -74,7 +74,6 @@ class _PageContentState extends State<PageContent> {
   Future<void> _updateTable() async {
     setState(() {
       isLoading = true;
-      filterIsValid = true;
     });
     fetchTrendLines();
   }
@@ -154,7 +153,7 @@ class _PageContentState extends State<PageContent> {
                           setState(() {
                             isLoading = true;
                             selectedTabIndex = selectedIndex;
-                            filterIsValid = selectedIndex == 0 ? true : false;
+                            filterValidItems = selectedIndex == 0 ? true : false;
                           });
                           switch (selectedIndex) {
                             case 0:
@@ -181,7 +180,7 @@ class _PageContentState extends State<PageContent> {
                           replacement: RefreshIndicator(
                             onRefresh: () {
                               setState(() {
-                                filterIsValid = true;
+                                filterValidItems = true;
                               });
                               return fetchTrendLines();
                             },
@@ -296,7 +295,7 @@ class _PageContentState extends State<PageContent> {
   Future<void> fetchTrendLines() async {
     var url = '/api/v1/trend-line/list';
     var queryParameters = {
-      "isValid": filterIsValid.toString(),
+      "isValid": filterValidItems.toString(),
       "symbol": filterSymbol?.toString().trim(),
       "timeframe": filterTimeframe?.toString().trim(),
       "ascend" : isAscend.toString(),
