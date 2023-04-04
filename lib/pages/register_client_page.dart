@@ -3,16 +3,21 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:roboexchange_ui/components/BlurCard.dart';
 import 'package:roboexchange_ui/service/auth_service.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class RegisterClientPage extends StatefulWidget {
+  const RegisterClientPage({Key? key}) : super(key: key);
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterClientPage> createState() => _RegisterClientPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterClientPageState extends State<RegisterClientPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+  final TextEditingController cellPhoneNumberController =
+      TextEditingController();
+  final TextEditingController emailAddressController = TextEditingController();
   final storage = const FlutterSecureStorage();
 
   @override
@@ -31,12 +36,20 @@ class _LoginPageState extends State<LoginPage> {
               border: Border.all(color: Colors.white),
               color: Color.fromARGB(50, 255, 255, 255),
               width: 300,
-              height: 370,
+              height: 430,
               padding: EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: IconButton(
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed("/login"),
+                      icon: Icon(Icons.arrow_back_outlined),
+                    ),
+                  ),
                   TextField(
                     controller: usernameController,
                     decoration: InputDecoration(
@@ -44,6 +57,24 @@ class _LoginPageState extends State<LoginPage> {
                           borderSide: BorderSide(color: Colors.white54)),
                       labelStyle: TextStyle(color: Colors.white54),
                       label: Text("Username"),
+                    ),
+                  ),
+                  TextField(
+                    controller: cellPhoneNumberController,
+                    decoration: InputDecoration(
+                      focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white54)),
+                      labelStyle: TextStyle(color: Colors.white54),
+                      label: Text("Phone number"),
+                    ),
+                  ),
+                  TextField(
+                    controller: cellPhoneNumberController,
+                    decoration: InputDecoration(
+                      focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white54)),
+                      labelStyle: TextStyle(color: Colors.white54),
+                      label: Text("Email"),
                     ),
                   ),
                   TextField(
@@ -56,11 +87,28 @@ class _LoginPageState extends State<LoginPage> {
                           borderSide: BorderSide(color: Colors.white54)),
                       labelStyle: TextStyle(color: Colors.white54),
                       fillColor: Colors.white,
+                      label: Text("Confirm Password"),
+                    ),
+                    textInputAction: TextInputAction.go,
+                    onSubmitted: (value) {
+                      register();
+                    },
+                  ),
+                  TextField(
+                    obscureText: true,
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    controller: confirmPasswordController,
+                    decoration: InputDecoration(
+                      focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white54)),
+                      labelStyle: TextStyle(color: Colors.white54),
+                      fillColor: Colors.white,
                       label: Text("Password"),
                     ),
                     textInputAction: TextInputAction.go,
                     onSubmitted: (value) {
-                      login();
+                      register();
                     },
                   ),
                   Padding(
@@ -74,40 +122,11 @@ class _LoginPageState extends State<LoginPage> {
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.zero)),
-                        onPressed: login,
-                        child: Text("Login"),
+                        onPressed: register,
+                        child: Text("Register"),
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20.0),
-                    child: SizedBox(
-                      width: 300,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.greenAccent,
-                            foregroundColor: Colors.black87,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.zero)),
-                        onPressed: () => Navigator.of(context).pushNamed("/register"),
-                        child: Text("Create new account"),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20.0),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          "Forget password ?",
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                    ),
-                  )
                 ],
               ),
             ),
@@ -117,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> login() async {
+  Future<void> register() async {
     showDialog(
         context: context,
         builder: (context) {
@@ -128,12 +147,15 @@ class _LoginPageState extends State<LoginPage> {
 
     final username = usernameController.text;
     final password = passwordController.text;
-    var success = await AuthService.login(username, password);
-
-    if (success && context.mounted) {
-      Navigator.of(context).pushNamed("/");
-    } else if (context.mounted) {
-      Navigator.of(context).pop();
+    final confirmPassword = confirmPasswordController.text;
+    final cellPhoneNumber = cellPhoneNumberController.text;
+    final emailAddress = emailAddressController.text;
+    if (password == confirmPassword) {
+      var success = await AuthService.register(
+          username, password, cellPhoneNumber, emailAddress);
+      if (success && context.mounted) {
+        Navigator.of(context).pushNamed("/login");
+      }
     }
   }
 }

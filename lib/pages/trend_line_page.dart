@@ -93,9 +93,8 @@ class _PageContentState extends State<PageContent> {
           ),
           Padding(
             padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-            child: Container(
+            child: SizedBox(
               width: double.infinity,
-              color: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
@@ -137,14 +136,12 @@ class _PageContentState extends State<PageContent> {
             child: Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
-                  color: Colors.white,
                   child: Column(
                     children: [
                       TabBar(
-                        unselectedLabelColor: Colors.black38,
-                        padding: EdgeInsets.all(5),
+                        indicatorPadding: EdgeInsets.all(5),
                         indicator: BoxDecoration(
                           color: Colors.lightBlueAccent,
                           borderRadius: BorderRadius.circular(4),
@@ -224,9 +221,8 @@ class _PageContentState extends State<PageContent> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Container(
+            child: SizedBox(
               width: double.infinity,
-              color: Colors.white,
               child: Visibility(
                 visible: isLoading,
                 replacement: RefreshIndicator(
@@ -330,7 +326,7 @@ class _PageContentState extends State<PageContent> {
       var x2 = tl['x2'].toString();
       var y1 = tl['y1'].toString();
       var y2 = tl['y2'].toString();
-      var isEnable = tl['enable'];
+      var isEnable = tl['valid'];
       var dataRow = DataRow(cells: [
         DataCell(Text(id)),
         DataCell(Text(symbol)),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:roboexchange_ui/components/appbar.dart';
 import 'package:roboexchange_ui/components/drawer.dart';
 
 class DesktopScaffold extends StatefulWidget {

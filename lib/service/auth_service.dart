@@ -24,6 +24,29 @@ class AuthService {
     return false;
   }
 
+  static Future<bool> register(String username,String password,String cellPhoneNumber,String emailAddress) async {
+    final uri = Uri.https(serverBaseUrl,'/api/v1/client/register');
+    var data = {
+      "username" : username,
+      "password" : password,
+      "profile" : {
+        "cellPhoneNumber" : cellPhoneNumber,
+        "emailAddress" : emailAddress,
+      }
+    };
+
+    var headers = {
+      'Content-Type': 'application/json',
+    };
+
+    var response = await http.post(uri, headers: headers);
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    return false;
+  }
+
   static Future<String?> getToken() async {
     var token = await storage.read(key: 'token');
     return token;
