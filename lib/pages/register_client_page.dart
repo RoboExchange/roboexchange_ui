@@ -29,7 +29,7 @@ class _RegisterClientPageState extends State<RegisterClientPage> {
           constraints: BoxConstraints.expand(),
           decoration: BoxDecoration(
               image: DecorationImage(
-                  image: AssetImage('images/login-background.png'),
+                  image: AssetImage('images/login-background.jpg'),
                   fit: BoxFit.cover)),
           child: Center(
             child: BlurCard(
