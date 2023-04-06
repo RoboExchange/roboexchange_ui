@@ -264,7 +264,7 @@ class _PageContentState extends State<PageContent> {
     });
     var symbol = filterSymbolController.text;
     var fetchTrendLines = await TrendService.fetchTrendLines(
-        symbol, filterTimeframe, !showValidItems, true, 'id');
+        symbol, filterTimeframe, showValidItems, true, 'id');
     setState(() {
       trendLines = fetchTrendLines;
       isLoading = false;
