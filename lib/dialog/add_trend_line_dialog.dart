@@ -1,17 +1,16 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:roboexchange_ui/components/dropdown_timeframe.dart';
-import 'package:roboexchange_ui/constant.dart';
-import 'package:roboexchange_ui/service/auth_service.dart';
+import 'package:roboexchange_ui/model/Timeframe.dart';
+import 'package:roboexchange_ui/model/TrendLine.dart';
+import 'package:roboexchange_ui/model/TrendType.dart';
+import 'package:roboexchange_ui/service/trend_service.dart';
 
 class AddTrendLineModal extends StatefulWidget {
   final Function updateTableFunction;
-  final Map? item;
+  final TrendLine? item;
 
   const AddTrendLineModal(
-      {Key? key, required this.updateTableFunction, required this.item})
+      {Key? key, required this.updateTableFunction, this.item})
       : super(key: key);
 
   @override
@@ -19,7 +18,7 @@ class AddTrendLineModal extends StatefulWidget {
 }
 
 class _AddTrendLineModalState extends State<AddTrendLineModal> {
-  String selectedTimeframe = "FOUR_HOUR";
+  Timeframe selectedTimeframe = Timeframe.fourHour;
 
   bool isUpdate = false;
   var currentDate = DateTime.now();
@@ -30,7 +29,7 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
   TextEditingController symbolController = TextEditingController();
   TextEditingController y1Controller = TextEditingController();
   TextEditingController y2Controller = TextEditingController();
-  late int id;
+  late int? id;
 
   @override
   void initState() {
@@ -38,13 +37,13 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
     final item = widget.item;
     if (item != null) {
       isUpdate = true;
-      id = item["id"];
-      symbolController.text = item["symbol"];
-      selectedTimeframe = item['timeframe'].toString();
-      y1Controller.text = item['y1'].toString();
-      y2Controller.text = item['y2'].toString();
-      x1DateTime = DateTime.parse(item['x1']);
-      x2DateTime = DateTime.parse(item['x2']);
+      id = item.id;
+      symbolController.text = item.symbol;
+      selectedTimeframe = item.timeframe;
+      y1Controller.text = item.y1.toString();
+      y2Controller.text = item.y2.toString();
+      x1DateTime = item.x1;
+      x2DateTime = item.x2;
     }
   }
 
@@ -58,13 +57,24 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
       actions: [
         ElevatedButton(
             onPressed: () {
+              var trendLine = TrendLine(
+                  null,
+                  symbolController.text,
+                  DateTime.now(),
+                  selectedTimeframe,
+                  TrendType.macd,
+                  x1DateTime,
+                  double.parse(y1Controller.text),
+                  x2DateTime,
+                  double.parse(y2Controller.text),
+                  widget.item != null ? false : true);
               if (isUpdate) {
-                updateItem()
+                TrendService.updateItem(id, trendLine)
                     .then((value) => Navigator.of(context, rootNavigator: true)
                         .pop('dialog'))
                     .then((value) => widget.updateTableFunction());
               } else {
-                addItem()
+                TrendService.addItem(trendLine)
                     .then((value) => Navigator.of(context, rootNavigator: true)
                         .pop('dialog'))
                     .then((value) => widget.updateTableFunction());
@@ -81,13 +91,13 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
               controller: symbolController,
               decoration: InputDecoration(labelText: "Symbol"),
             ),
-            DropDownTimeframes(
-                selectedTimeframe: selectedTimeframe,
-                onChange:(String? value) {
-                  setState(() {
-                    selectedTimeframe = value!;
-                  });
-                },
+            timeFrameDropDown(
+              selectedTimeframe,
+              (Timeframe? value) {
+                setState(() {
+                  selectedTimeframe = value!;
+                });
+              },
             ),
             Padding(
               padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
@@ -150,51 +160,4 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
 
   Future<TimeOfDay?> pickTime() =>
       showTimePicker(context: context, initialTime: currentTime);
-
-  Future<void> addItem() async {
-    var token = await AuthService.getToken();
-    var data = {
-      "symbol": symbolController.text,
-      "x1": x1DateTime.toIso8601String(),
-      "y1": double.parse(y1Controller.text),
-      "x2": x2DateTime.toIso8601String(),
-      "y2": double.parse(y2Controller.text),
-      "type": "MACD",
-      "timeframe": selectedTimeframe,
-      "enable": true
-    };
-
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': '$token'
-    };
-
-    var uri = Uri.https(serverBaseUrl,'/api/v1/trend-line/add');
-    await http.post(uri,
-        body: jsonEncode(data), headers: headers);
-  }
-
-  Future<void> updateItem() async {
-    var token = await AuthService.getToken();
-    var data = {
-      "symbol": symbolController.text,
-      "x1": x1DateTime.toIso8601String(),
-      "y1": y1Controller.text.isNotEmpty ? double.parse(y1Controller.text) : null,
-      "x2": x2DateTime.toIso8601String(),
-      "y2": y2Controller.text.isNotEmpty ? double.parse(y2Controller.text) : null,
-      "type": "MACD",
-      "timeframe": selectedTimeframe,
-      "enable": true
-    };
-
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': '$token'
-    };
-
-    var uri = Uri.https(serverBaseUrl,'/api/v1/trend-line/$id');
-    var response =
-        await http.put(uri, body: jsonEncode(data), headers: headers);
-    print(response.body);
-  }
 }

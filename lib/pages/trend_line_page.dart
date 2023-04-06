@@ -1,18 +1,15 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
-import 'package:roboexchange_ui/components/appbar.dart';
 import 'package:roboexchange_ui/components/dropdown_timeframe.dart';
-import 'package:roboexchange_ui/constant.dart';
-import 'package:roboexchange_ui/model/add_trend_line_modal.dart';
-import 'package:roboexchange_ui/model/confirmation_dialog.dart';
+import 'package:roboexchange_ui/dialog/add_trend_line_dialog.dart';
+import 'package:roboexchange_ui/dialog/confirmation_dialog.dart';
+import 'package:roboexchange_ui/model/Timeframe.dart';
+import 'package:roboexchange_ui/model/TrendLine.dart';
 import 'package:roboexchange_ui/responsive/desktop_scaffold.dart';
 import 'package:roboexchange_ui/responsive/mobile_scaffold.dart';
 import 'package:roboexchange_ui/responsive/responsive_layout.dart';
 import 'package:roboexchange_ui/responsive/tablet_scaffold.dart';
-import 'package:roboexchange_ui/service/auth_service.dart';
+import 'package:roboexchange_ui/service/trend_service.dart';
+import 'package:roboexchange_ui/utils.dart';
 
 class TrendLineListPage extends StatefulWidget {
   const TrendLineListPage({Key? key}) : super(key: key);
@@ -22,22 +19,29 @@ class TrendLineListPage extends StatefulWidget {
 }
 
 class _TrendLineListPageState extends State<TrendLineListPage> {
+  final String pageTitle = 'Trends';
+
   @override
   Widget build(BuildContext context) {
     return ResponsiveLayout(
       mobileScaffold: MobileScaffold(
-          body: PageContent(
-        showAppBar: false,
-      )),
+        body: PageContent(
+          showAppBar: false,
+        ),
+        title: pageTitle,
+      ),
       tabletScaffold: TabletScaffold(
         body: PageContent(
           showAppBar: false,
         ),
+        title: pageTitle,
       ),
       desktopScaffold: DesktopScaffold(
-          body: PageContent(
-        showAppBar: true,
-      )),
+        body: PageContent(
+          showAppBar: true,
+        ),
+        title: pageTitle,
+      ),
     );
   }
 }
@@ -52,18 +56,15 @@ class PageContent extends StatefulWidget {
 }
 
 class _PageContentState extends State<PageContent> {
-  var storage = const FlutterSecureStorage();
-  List trendLines = [];
+  final ScrollController _horizontal = ScrollController();
+
+  List<TrendLine> trendLines = [];
+
   bool isLoading = true;
 
-  int selectedTabIndex = 0;
-  bool isAscend = true;
-  String sortColumnName = "id";
-  int? sortColumnIndex;
-
-  String? filterSymbol;
-  String? filterTimeframe;
-  bool filterValidItems = true;
+  Timeframe? filterTimeframe = Timeframe.none;
+  TextEditingController filterSymbolController = TextEditingController();
+  bool showValidItems = true;
 
   @override
   void initState() {
@@ -71,339 +72,201 @@ class _PageContentState extends State<PageContent> {
     fetchTrendLines();
   }
 
-  Future<void> _updateTable() async {
-    setState(() {
-      isLoading = true;
-    });
-    fetchTrendLines();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black12,
-      body: Column(
-        children: [
-          Visibility(
-            visible: widget.showAppBar,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CustomAppBar.getAppBar(context),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Spacer(),
-                    SizedBox(
-                      width: 300,
-                      child: TextField(
-                          decoration: InputDecoration(label: Text("Search")),
-                          onChanged: (symbol) {
-                            setState(() {
-                              filterSymbol = symbol;
-                            });
-                            fetchTrendLines();
-                          }),
-                    ),
-                    SizedBox(
-                      width: 18,
-                    ),
-                    SizedBox(
-                      width: 180,
-                      child: DropDownTimeframes(
-                        onChange: (String? selectedTimeframe) {
-                          setState(() {
-                            filterTimeframe = selectedTimeframe;
-                          });
-                          fetchTrendLines();
-                        },
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ),
-          DefaultTabController(
-            length: 2,
-            child: Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Column(
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          width: double.infinity,
+          color: Colors.white,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      TabBar(
-                        indicatorPadding: EdgeInsets.all(5),
-                        indicator: BoxDecoration(
-                          color: Colors.lightBlueAccent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        onTap: (selectedIndex) {
-                          setState(() {
-                            isLoading = true;
-                            selectedTabIndex = selectedIndex;
-                            filterValidItems = selectedIndex == 0 ? true : false;
-                          });
-                          switch (selectedIndex) {
-                            case 0:
-                              fetchTrendLines();
-                              break;
-                            case 1:
-                              fetchTrendLines();
-                          }
-                        },
-                        tabs: const [
-                          Tab(
-                            text: "Active",
-                            icon: Icon(Icons.check),
-                          ),
-                          Tab(
-                            text: "Need Update",
-                            icon: Icon(Icons.update),
-                          ),
-                        ],
-                      ),
-                      Expanded(
-                        child: Visibility(
-                          visible: isLoading,
-                          replacement: RefreshIndicator(
-                            onRefresh: () {
-                              setState(() {
-                                filterValidItems = true;
-                              });
-                              return fetchTrendLines();
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) {
+                              return AddTrendLineModal(
+                                item: null,
+                                updateTableFunction: fetchTrendLines,
+                              );
                             },
-                            child: TabBarView(
-                              physics: NeverScrollableScrollPhysics(),
-                              children: [
-                                trendLineTable(true),
-                                trendLineTable(false),
-                              ],
-                            ),
+                          );
+                        },
+                        icon: Icon(Icons.add),
+                        label: Text('Add'),
+                      ),
+                      Spacer(),
+                      SizedBox(
+                        width: 200,
+                        child: TextField(
+                          controller: filterSymbolController,
+                          decoration: InputDecoration(
+                            label: Text('Search'),
                           ),
-                          child: Center(child: CircularProgressIndicator()),
+                          onChanged: (value) => fetchTrendLines(),
                         ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: 160,
+                          child: timeFrameDropDown(
+                            filterTimeframe ?? Timeframe.none,
+                                (timeframe) =>
+                            {
+                              setState(() {
+                                filterTimeframe = timeframe;
+                              }),
+                              fetchTrendLines()
+                            },
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 150,
+                        child: CheckboxListTile(
+                            value: showValidItems ,
+                            title: Text('Only Valid'),
+                            onChanged: (value) {
+                              setState(() {
+                                showValidItems = value ?? true;
+                              });
+                              fetchTrendLines();
+                            }
+                        ),
+                      )
                     ],
                   ),
                 ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showDialog(
-          context: context,
-          builder: (_) {
-            return AddTrendLineModal(
-              item: null,
-              updateTableFunction: _updateTable,
-            );
-          },
-        ),
-        child: Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget trendLineTable(bool isValid) {
-    return Column(
-      children: [
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: Visibility(
-                visible: isLoading,
-                replacement: RefreshIndicator(
-                  onRefresh: () {
-                    setState(() {
-                      isValid = true;
-                    });
-                    return fetchTrendLines();
-                  },
-                  child: LayoutBuilder(
-                    builder: (BuildContext context, BoxConstraints constraint) {
-                      return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.vertical,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                                minHeight: constraint.maxHeight,
-                                minWidth: constraint.maxWidth),
+                SizedBox(
+                  width: double.infinity,
+                  child: Visibility(
+                    visible: isLoading,
+                    replacement: RefreshIndicator(
+                      onRefresh: () {
+                        return fetchTrendLines();
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Scrollbar(
+                          controller: _horizontal,
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                            controller: _horizontal,
+                            scrollDirection: Axis.horizontal,
                             child: DataTable(
-                              sortAscending: isAscend,
-                              sortColumnIndex: sortColumnIndex,
-                              columns: [
-                                DataColumn(label: Text("id"),onSort: (index, ascend) => sortColumn(index, ascend)),
-                                DataColumn(label: Text("symbol"),onSort: (index, ascend) => sortColumn(index, ascend)),
-                                DataColumn(label: Text("last update"),onSort: (index, ascend) => sortColumn(index, ascend)),
-                                DataColumn(label: Text("timeframe"),onSort: (index, ascend) => sortColumn(index, ascend)),
-                                DataColumn(label: Text("type")),
-                                DataColumn(label: Text("x1")),
-                                DataColumn(label: Text("y1")),
-                                DataColumn(label: Text("x2")),
-                                DataColumn(label: Text("y2")),
-                                DataColumn(label: Text("actions")),
-                              ],
-                              rows: fillTableRows(),
+                              columns: tableColumns(),
+                              rows: tableRows(),
                             ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
-                ),
-                child: Center(child: CircularProgressIndicator()),
-              ),
+                )
+              ],
             ),
           ),
-        )
-      ],
+        ),
+      ),
     );
   }
 
-  void sortColumn(int index, bool ascend) {
-    setState(() {
-      sortColumnIndex = index;
-      isAscend = ascend;
-      switch (index) {
-        case 0 : sortColumnName = "id" ; break;
-        case 1 : sortColumnName = "symbol" ; break;
-        case 2 : sortColumnName = "lastUpdateTime" ; break;
-        case 3 : sortColumnName = "timeframe" ; break;
-      }
-    });
-    fetchTrendLines();
+  List<DataColumn> tableColumns() {
+    return const [
+      DataColumn(label: Text('ID')),
+      DataColumn(label: Text('Symbol')),
+      DataColumn(label: Text('Last Update')),
+      DataColumn(label: Text('Timeframe')),
+      DataColumn(label: Text('type')),
+      DataColumn(label: Text('X1')),
+      DataColumn(label: Text('Y1')),
+      DataColumn(label: Text('X2')),
+      DataColumn(label: Text('Y2')),
+      DataColumn(label: Text('Action')),
+    ];
+  }
+
+  List<DataRow> tableRows() {
+    List<DataRow> rowList = [];
+    for (var item in trendLines) {
+      var row = DataRow(
+        cells: [
+          DataCell(Text(item.id.toString())),
+          DataCell(Text(item.symbol)),
+          DataCell(Text(item.timeframe.value)),
+          DataCell(Text(formatDateTime(item.lastUpdateTime))),
+          DataCell(Text(item.type.value)),
+          DataCell(Text(item.x1.toString())),
+          DataCell(Text(item.y1.toString())),
+          DataCell(Text(item.x2.toString())),
+          DataCell(Text(item.y2.toString())),
+          DataCell(
+            Row(
+              children: [
+                IconButton(onPressed: () => deleteTrendLine(item.id),
+                    icon: Icon(Icons.delete)),
+                IconButton(onPressed: () {
+                  showDialog(
+                      context: context,
+                      builder: (_) {
+                        return AddTrendLineModal(
+                          updateTableFunction: fetchTrendLines,
+                          item: item,
+                        );
+                      });
+                }, icon: Icon(Icons.edit)),
+                Checkbox(
+                  value: item.isValid,
+                  onChanged: (bool? value) {
+                    showDialog(
+                        context: context,
+                        builder: (_) {
+                          return ConfirmationDialog(
+                            confirm: value,
+                            title: Text('Confirmation'),
+                            description: Text(
+                                "Change trendline status of symbol ${item
+                                    .symbol}.\nAre you sure?"),
+                            onSubmit: () {
+                              changeStatus(item.id, value);
+                              Navigator.of(context, rootNavigator: true)
+                                  .pop('dialog');
+                            },
+                          );
+                        });
+                  },
+                )
+              ],
+            ),
+          ),
+        ],
+      );
+      rowList.add(row);
+    }
+    return rowList;
   }
 
   Future<void> fetchTrendLines() async {
-    var url = '/api/v1/trend-line/list';
-    var queryParameters = {
-      "isValid": filterValidItems.toString(),
-      "symbol": filterSymbol?.toString().trim(),
-      "timeframe": filterTimeframe?.toString().trim(),
-      "ascend" : isAscend.toString(),
-      "orderBy" : sortColumnName
-    };
-
-    var uri = Uri.https(serverBaseUrl, url, queryParameters);
-    var token = await AuthService.getToken();
-    var headers = {'Authorization': '$token'};
-    var response = await http.get(uri, headers: headers);
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map;
-      setState(() {
-        trendLines = json["data"] as List;
-        isLoading = false;
-      });
-    } else if (response.statusCode == 401 && context.mounted) {
-      Navigator.of(context).pushNamed("/login");
-    }
-  }
-
-  List<DataRow> fillTableRows() {
-    List<DataRow> listRows = [];
-    for (var tl in trendLines) {
-      var id = tl['id'].toString();
-      var symbol = tl['symbol'] ?? " ";
-      var timeframe = tl['timeframe'] ?? " ";
-      var lastUpdateTime = tl['lastUpdateTime'].toString();
-      var type = tl['type'] ?? " ";
-      var x1 = tl['x1'].toString();
-      var x2 = tl['x2'].toString();
-      var y1 = tl['y1'].toString();
-      var y2 = tl['y2'].toString();
-      var isEnable = tl['valid'];
-      var dataRow = DataRow(cells: [
-        DataCell(Text(id)),
-        DataCell(Text(symbol)),
-        DataCell(Text(formatDateTime(DateTime.parse(lastUpdateTime)))),
-        DataCell(Text(timeframe)),
-        DataCell(Text(type)),
-        DataCell(Text(formatDateTime(DateTime.parse(x1)))),
-        DataCell(Text(y1)),
-        DataCell(Text(formatDateTime(DateTime.parse(x2)))),
-        DataCell(Text(y2)),
-        DataCell(Row(
-          children: [
-            IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () => deleteTrendLine(id),
-            ),
-            IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: () => {
-                showDialog(
-                    context: context,
-                    builder: (_) {
-                      return AddTrendLineModal(
-                          updateTableFunction: _updateTable, item: tl);
-                    })
-              },
-            ),
-            Checkbox(
-              value: isEnable,
-              onChanged: (value) {
-                showDialog(
-                    context: context,
-                    builder: (_) {
-                      return ConfirmationDialog(
-                        confirm: value,
-                        title: Text('Confirmation'),
-                        description: Text(
-                            "Change trendline status of symbol $symbol.\nAre you sure?"),
-                        onSubmit: () {
-                          changeStatus(id, value);
-                          Navigator.of(context, rootNavigator: true)
-                              .pop('dialog');
-                        },
-                      );
-                    });
-              },
-            )
-          ],
-        )),
-      ]);
-      listRows.add(dataRow);
-    }
-    return listRows;
-  }
-
-  Future<void> deleteTrendLine(id) async {
     setState(() {
       isLoading = true;
     });
-    var uri = Uri.https(serverBaseUrl, '/api/v1/trend-line/$id');
-    var token = await AuthService.getToken();
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': '$token'
-    };
-
-    var response = await http.delete(uri, headers: headers);
-    if (response.statusCode == 200) {
-      var filtered = trendLines
-          .where((element) => element['id'].toString() != id)
-          .toList();
-      setState(() {
-        trendLines = filtered;
-      });
-    }
-
+    var symbol = filterSymbolController.text;
+    var fetchTrendLines = await TrendService.fetchTrendLines(
+        symbol, filterTimeframe, !showValidItems, true, 'id');
     setState(() {
+      trendLines = fetchTrendLines;
       isLoading = false;
     });
   }
@@ -413,22 +276,28 @@ class _PageContentState extends State<PageContent> {
       isLoading = true;
     });
 
-    var reqParameters = {
-      'id': id.toString(),
-      'enable': isEnable.toString(),
-    };
-    var uri =
-        Uri.https(serverBaseUrl, '/api/v1/trend-line/status', reqParameters);
-    var token = await AuthService.getToken();
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': '$token'
-    };
+    var success = await TrendService.changeStatus(id, isEnable);
+    if (success) {
+      var filtered = trendLines.where((item) => item.id != id).toList();
+      setState(() {
+        trendLines = filtered;
+      });
+    }
 
-    var response = await http.get(uri, headers: headers);
-    if (response.statusCode == 200) {
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  Future<void> deleteTrendLine(id) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    var success = await TrendService.deleteTrendLine(id);
+    if (success) {
       var filtered = trendLines
-          .where((element) => element['id'].toString() != id)
+          .where((item) => item.id != id)
           .toList();
       setState(() {
         trendLines = filtered;
@@ -440,7 +309,4 @@ class _PageContentState extends State<PageContent> {
     });
   }
 
-  String formatDateTime(DateTime dateTime) {
-    return "${dateTime.year}/${dateTime.month}/${dateTime.day} ${dateTime.hour}:${dateTime.minute}";
-  }
 }

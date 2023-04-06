@@ -16,7 +16,6 @@ class AuthService {
     var response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       var token = response.headers['authorization'];
-      print('Login success');
       await storage.write(key: 'token', value: token);
       return true;
     }
@@ -47,8 +46,19 @@ class AuthService {
     return false;
   }
 
-  static Future<String?> getToken() async {
+  static Future<bool> refreshToken() async {
     var token = await storage.read(key: 'token');
-    return token;
+    String url = '/api/v1/auth/refresh-token';
+
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': '$token'
+    };
+
+    var uri = Uri.https(serverBaseUrl, url);
+    var response = await http.get(uri, headers: headers);
+    var newToken = response.headers['authorization'];
+    await storage.write(key: 'token', value: newToken);
+    return newToken != null;
   }
 }
