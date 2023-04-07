@@ -67,7 +67,7 @@ class _AddTrendLineModalState extends State<AddTrendLineModal> {
                   double.parse(y1Controller.text),
                   x2DateTime,
                   double.parse(y2Controller.text),
-                  widget.item != null ? false : true);
+                  true);
               if (isUpdate) {
                 TrendService.updateItem(id, trendLine)
                     .then((value) => Navigator.of(context, rootNavigator: true)

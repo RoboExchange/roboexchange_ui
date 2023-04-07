@@ -99,8 +99,11 @@ class TrendService {
     var body = trendLine.toMap();
 
     var uri = Uri.https(serverBaseUrl, url);
-    var response =
-        await http.post(uri, body: jsonEncode(body), headers: headers);
+    var response = await http.post(uri, body: jsonEncode(body), headers: headers);
+    print('[INFO] Add item ${trendLine.symbol} ${trendLine.timeframe.value} ');
+    if (response.statusCode != 200) {
+      print('[ERROR] ${response.statusCode} ${response.body}');
+    }
     return response.statusCode == 200;
   }
 
@@ -115,6 +118,10 @@ class TrendService {
     var body = jsonEncode(trendLine.toMap());
     var uri = Uri.https(serverBaseUrl, url);
     var response = await http.put(uri, body: body, headers: headers);
+    print('[INFO] Update item $id ${trendLine.symbol} ${trendLine.timeframe.value} ');
+    if (response.statusCode != 200) {
+      print('[ERROR] ${response.statusCode} ${response.body}');
+    }
     return response.statusCode == 200;
   }
 }
