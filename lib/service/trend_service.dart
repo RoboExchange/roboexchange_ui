@@ -100,7 +100,7 @@ class TrendService {
 
     var uri = Uri.https(serverBaseUrl, url);
     var response = await http.post(uri, body: jsonEncode(body), headers: headers);
-    print('[INFO] Add item ${trendLine.symbol} ${trendLine.timeframe.value} ');
+    print('[INFO] Add item ${trendLine.symbol} ${trendLine.timeframe.value} ${trendLine.type.value} ${trendLine.isValid}');
     if (response.statusCode != 200) {
       print('[ERROR] ${response.statusCode} ${response.body}');
     }
@@ -118,7 +118,7 @@ class TrendService {
     var body = jsonEncode(trendLine.toMap());
     var uri = Uri.https(serverBaseUrl, url);
     var response = await http.put(uri, body: body, headers: headers);
-    print('[INFO] Update item $id ${trendLine.symbol} ${trendLine.timeframe.value} ');
+    print('[INFO] Update item $id ${trendLine.symbol} ${trendLine.timeframe.value} ${trendLine.type.value} ${trendLine.isValid}');
     if (response.statusCode != 200) {
       print('[ERROR] ${response.statusCode} ${response.body}');
     }
